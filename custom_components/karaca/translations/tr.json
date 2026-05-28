@@ -1,0 +1,25 @@
+{
+  "title": "Karaca Connect",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Karaca Connect",
+        "description": "Karaca Connect hesap bilgilerinizi girin.",
+        "data": {
+          "email": "E-posta",
+          "password": "Şifre",
+          "name_prefix": "Cihaz adı ön eki"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "E-posta veya şifre hatalı.",
+      "no_devices": "Bu hesapta uyumlu Karaca cihazı bulunamadı.",
+      "cannot_connect": "Karaca Connect'e bağlanılamadı.",
+      "unknown": "Beklenmeyen bir hata oluştu."
+    },
+    "abort": {
+      "already_configured": "Bu Karaca Connect hesabı zaten yapılandırılmış."
+    }
+  }
+}
