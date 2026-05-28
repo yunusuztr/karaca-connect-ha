@@ -69,3 +69,4 @@ class KaracaModeSelect(KaracaBaseEntity, SelectEntity):
             await self.coordinator.async_request_refresh()
         except Exception as err:
             LOGGER.error("Failed to set mode: %s", err)
+            raise

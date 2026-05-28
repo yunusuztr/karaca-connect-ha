@@ -63,6 +63,7 @@ class KaracaPowerSwitch(KaracaBaseEntity, SwitchEntity):
             await self.coordinator.async_request_refresh()
         except Exception as err:
             LOGGER.error("Failed to turn on tea maker: %s", err)
+            raise
 
     async def async_turn_off(self, **kwargs) -> None:
         """Turn the tea maker off (returns to StandBy mode)."""
@@ -76,3 +77,4 @@ class KaracaPowerSwitch(KaracaBaseEntity, SwitchEntity):
             await self.coordinator.async_request_refresh()
         except Exception as err:
             LOGGER.error("Failed to turn off tea maker: %s", err)
+            raise

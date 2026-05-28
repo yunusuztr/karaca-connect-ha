@@ -18,6 +18,7 @@ Bu entegrasyon, Karaca Connect bulut API'sini kullanarak çay makinenizin durumu
 - **Güç Şalteri (switch):** Tek bir tıkla makineyi çalıştırabilir (varsayılan olarak su kaynatma modunda açılır) veya standby moduna alarak tamamen kapatabilirsiniz.
 - **Durum Takibi (sensor):** Cihazın anlık aşamasını ("Su Kaynatılıyor", "Su Hazır", "Çay Demleniyor", "Kapalı") Türkçe olarak takip edebilir, countdown (geri sayım) ve freshness (tazelik süresi) verilerini extra attributes olarak görebilirsiniz.
 - **Güvenli Kimlik Doğrulama:** E-posta ve şifreniz yerel olarak şifrelenmiş HA .storage sisteminde saklanır. JWT token'lar otomatik yenilenir.
+- **Akıllı Hata ve Uyarı Bildirimleri (Toast Notifications):** Fiziksel kurallara uymayan bir komut gönderildiğinde (örn. suyun mevcut sıcaklığının altında bir Mama Suyu sıcaklığı seçildiğinde veya haznede su yokken kaynatma başlatıldığında) Karaca sunucularından dönen orijinal Türkçe hata mesajları Lovelace arayüzünde canlı birer uyarı balonu (toast) olarak anında kullanıcıya gösterilir.
 
 ### 🔌 Kurulum
 1. HACS arayüzüne gidin, sağ üstteki üç noktaya tıklayıp **"Custom Repositories"** seçeneğini seçin.
@@ -59,6 +60,7 @@ This integration connects directly to your Karaca Connect account and registers 
 - **Mode Selection (select):** Select between Standby (off), Filter Coffee, Boiling Water, Tea Brewing, and Baby Food modes.
 - **Master Power Switch (switch):** Easily turn the device ON (defaults to Boiling Water) or OFF.
 - **Telemetry Sensors (sensor):** Tracks real-time friendly status (e.g. Boiling, Boiled, Standby, Tea Brewing) and exposes freshness countdowns as attributes.
+- **Smart Error & Warning Toasts:** Any command violating physical rules (e.g., trying to boil water when empty, or setting a target baby food temperature below the current water temperature) will instantly bubble up as a native Home Assistant UI toast popup notification with the exact error description returned by the Karaca servers.
 
 ### 🔌 Installation
 1. Go to **HACS**, select **Custom Repositories** from the top-right menu.

@@ -5,6 +5,7 @@ import aiohttp
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError, ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, LOGGER, BASE_URL, CONF_NAME_PREFIX, DEFAULT_SCAN_INTERVAL
@@ -81,13 +82,44 @@ class KaracaAPIClient:
                         
                         async with session.request(method, url, headers=headers, json=json_data, timeout=15) as retry_response:
                             if retry_response.status != 200:
+                                try:
+                                    res_json = await retry_response.json()
+                                    if isinstance(res_json, dict) and not res_json.get("succeeded", True):
+                                        messages = res_json.get("messages", [])
+                                        err_msg = messages[0] if messages else f"status {retry_response.status}"
+                                        raise HomeAssistantError(f"Karaca Hatası: {err_msg}")
+                                except HomeAssistantError:
+                                    raise
+                                except Exception:
+                                    pass
                                 raise UpdateFailed(f"API request failed after token refresh: status {retry_response.status}")
-                            return await retry_response.json()
+                            
+                            res_json = await retry_response.json()
+                            if isinstance(res_json, dict) and not res_json.get("succeeded", True):
+                                messages = res_json.get("messages", [])
+                                err_msg = messages[0] if messages else "Bilinmeyen bir hata oluştu."
+                                raise HomeAssistantError(f"Karaca Hatası: {err_msg}")
+                            return res_json
                     
                     if response.status != 200:
+                        try:
+                            res_json = await response.json()
+                            if isinstance(res_json, dict) and not res_json.get("succeeded", True):
+                                messages = res_json.get("messages", [])
+                                err_msg = messages[0] if messages else f"returned status {response.status}"
+                                raise HomeAssistantError(f"Karaca Hatası: {err_msg}")
+                        except HomeAssistantError:
+                            raise
+                        except Exception:
+                            pass
                         raise UpdateFailed(f"API request failed: {method} {path} returned status {response.status}")
                     
-                    return await response.json()
+                    res_json = await response.json()
+                    if isinstance(res_json, dict) and not res_json.get("succeeded", True):
+                        messages = res_json.get("messages", [])
+                        err_msg = messages[0] if messages else "Bilinmeyen bir hata oluştu."
+                        raise HomeAssistantError(f"Karaca Hatası: {err_msg}")
+                    return res_json
             except aiohttp.ClientError as err:
                 raise UpdateFailed(f"Communication error with Karaca API: {err}")
 
