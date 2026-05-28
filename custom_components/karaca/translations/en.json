@@ -1,0 +1,25 @@
+{
+  "title": "Karaca Connect",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Karaca Connect",
+        "description": "Enter your Karaca Connect account credentials.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "name_prefix": "Device name prefix"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid email or password.",
+      "no_devices": "No compatible Karaca device was found in this account.",
+      "cannot_connect": "Unable to connect to Karaca Connect.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This Karaca Connect account is already configured."
+    }
+  }
+}
