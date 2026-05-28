@@ -4,50 +4,52 @@
 ![Home Assistant](https://img.shields.io/badge/home--assistant-%230123.svg?style=for-the-badge&logo=home-assistant&logoColor=white)
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 
-[TR] Karaca Caysever Robotea Pro Connect 4in1 akilli cay makinesi icin Home Assistant entegrasyonu.`n[EN] Home Assistant custom integration for the Karaca Caysever Robotea Pro Connect 4in1 smart tea maker.
+[TR] Karaca Çaysever Robotea Pro Connect 4in1 akıllı çay makinesi için Home Assistant entegrasyonu.
+
+[EN] Home Assistant custom integration for the Karaca Çaysever Robotea Pro Connect 4in1 smart tea maker.
 
 ---
 
-## Turkce
+## Türkçe
 
-Bu entegrasyon Karaca Connect bulut API'sini kullanarak cay makinenizin durumunu Home Assistant'a aktarir ve cihaz modlarini kontrol etmenizi saglar.
+Bu entegrasyon Karaca Connect bulut API'sini kullanarak çay makinenizin durumunu Home Assistant'a aktarır ve cihaz modlarını kontrol etmenizi sağlar.
 
-### Ozellikler
+### Özellikler
 
-- **Kurulum akisi:** Home Assistant arayuzunden e-posta ve sifre ile kurulum.
-- **Cihaz secimi:** Hesabinizda birden fazla desteklenen Karaca cihaz varsa kurulumda cihaz secimi.
-- **Mod kontrolu:** Su kaynatma, cay demleme, filtre kahve, mama suyu ve standby modlari.
-- **Guc anahtari:** Cihazi varsayilan olarak su kaynatma modunda baslatma veya standby'a alma.
-- **Durum sensoru:** `Su Kaynatiliyor`, `Su Hazir`, `Cay Demleniyor`, `Cay Hazir (Taze)`, `Kapali` ve hata durumlarini enum sensor olarak sunar.
-- **Tazelik takibi:** Cay hazir oldugunda tazelik/countdown bilgisi varsa durum `Cay Hazir (Taze)` olarak kalir.
-- **Hata esleme:** Su yok, hedef sicaklik uygun degil, temizlik gerekli ve genel cihaz uyarilari sabit enum durumlari olarak gosterilir.
-- **Ayarlar:** Entegrasyon ayarlarindan ad on eki, guncelleme araligi ve hata mesajinin ekranda kalma suresi degistirilebilir.
-- **Kimlik dogrulama:** Token yenileme ve yeniden kimlik dogrulama akisi desteklenir.
-- **Dil destegi:** Turkce ve Ingilizce ceviriler bulunur.
-- **Diagnostics:** Sorun bildirimi icin Home Assistant diagnostics destegi vardir.
+- **Kurulum akışı:** Home Assistant arayüzünden e-posta ve şifre ile kurulum.
+- **Cihaz seçimi:** Hesabınızda birden fazla desteklenen Karaca cihaz varsa kurulumda cihaz seçimi.
+- **Mod kontrolü:** Su kaynatma, çay demleme, filtre kahve, mama suyu ve standby modları.
+- **Güç anahtarı:** Cihazı varsayılan olarak su kaynatma modunda başlatma veya standby'a alma.
+- **Durum sensörü:** `Su Kaynatılıyor`, `Su Hazır`, `Çay Demleniyor`, `Çay Hazır (Taze)`, `Kapalı` ve hata durumlarını enum sensör olarak sunar.
+- **Tazelik takibi:** Çay hazır olduğunda tazelik/countdown bilgisi varsa durum `Çay Hazır (Taze)` olarak kalır.
+- **Hata eşleme:** Su yok, hedef sıcaklık uygun değil, temizlik gerekli ve genel cihaz uyarıları sabit enum durumları olarak gösterilir.
+- **Ayarlar:** Entegrasyon ayarlarından ad ön eki, güncelleme aralığı ve hata mesajının ekranda kalma süresi değiştirilebilir.
+- **Kimlik doğrulama:** Token yenileme ve yeniden kimlik doğrulama akışı desteklenir.
+- **Dil desteği:** Türkçe ve İngilizce çeviriler bulunur.
+- **Diagnostics:** Sorun bildirimi için Home Assistant diagnostics desteği vardır.
 
 ### Kurulum
 
-1. HACS arayuzunde sag ust menuden **Custom repositories** bolumunu acin.
-2. `https://github.com/yunusuztr/karaca-connect-ha` adresini ekleyin ve kategori olarak **Integration** secin.
-3. Entegrasyonu indirin ve Home Assistant'i yeniden baslatin.
-4. **Ayarlar > Cihazlar ve hizmetler > Entegrasyon ekle** bolumunden **Karaca Connect** aratin.
-5. Karaca Connect hesabinizla giris yapin ve kurulumu tamamlayin.
+1. HACS arayüzünde sağ üst menüden **Custom repositories** bölümünü açın.
+2. `https://github.com/yunusuztr/karaca-connect-ha` adresini ekleyin ve kategori olarak **Integration** seçin.
+3. Entegrasyonu indirin ve Home Assistant'ı yeniden başlatın.
+4. **Ayarlar > Cihazlar ve hizmetler > Entegrasyon ekle** bölümünden **Karaca Connect** aratın.
+5. Karaca Connect hesabınızla giriş yapın ve kurulumu tamamlayın.
 
-### Ornek Otomasyon
+### Örnek Otomasyon
 
 ```yaml
-alias: "Karaca: Su Hazir Bildirimi"
+alias: "Karaca: Su Hazır Bildirimi"
 trigger:
   - platform: state
     entity_id: sensor.cay_makinesi_durumu
-    from: "Su Kaynatiliyor"
-    to: "Su Hazir"
+    from: "Su Kaynatılıyor"
+    to: "Su Hazır"
 action:
   - service: notify.notify
     data:
-      title: "Karaca Caysever"
-      message: "Su hazir. Cayi demleyebilirsiniz."
+      title: "Karaca Çaysever"
+      message: "Su hazır. Çayı demleyebilirsiniz."
 ```
 
 ---
@@ -62,8 +64,8 @@ This integration connects to the Karaca Connect cloud API and exposes your smart
 - **Device selection:** Choose a supported Karaca device when multiple devices exist on the account.
 - **Mode control:** Boiling water, tea brewing, filter coffee, baby water, and standby modes.
 - **Power switch:** Start the device in boiling water mode or return it to standby.
-- **Status sensor:** Exposes stable enum states such as `Su Kaynatiliyor`, `Su Hazir`, `Cay Demleniyor`, `Cay Hazir (Taze)`, `Kapali`, and mapped error states.
-- **Freshness handling:** When tea freshness/countdown data is active, the status remains `Cay Hazir (Taze)`.
+- **Status sensor:** Exposes stable enum states such as `Su Kaynatılıyor`, `Su Hazır`, `Çay Demleniyor`, `Çay Hazır (Taze)`, `Kapalı`, and mapped error states.
+- **Freshness handling:** When tea freshness/countdown data is active, the status remains `Çay Hazır (Taze)`.
 - **Error mapping:** Water empty, invalid target temperature, cleaning required, and generic device warnings are exposed as stable enum states.
 - **Options flow:** Configure name prefix, polling interval, and how long command errors remain visible.
 - **Authentication:** Refresh-token handling and reauthentication support.
