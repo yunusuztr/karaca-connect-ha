@@ -1,9 +1,11 @@
 """Platform for Karaca Connect switch integration."""
+import asyncio
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from . import KaracaAPIError
 from .const import DOMAIN, LOGGER, CONF_NAME_PREFIX, DEFAULT_NAME
 from .sensor import KaracaBaseEntity
 
@@ -59,11 +61,25 @@ class KaracaPowerSwitch(KaracaBaseEntity, SwitchEntity):
             path = f"/api/v1/devices/{self.coordinator.device_id}/modes/6"
             await self.client.async_request("PUT", path, json_data={"active": True})
             
+            # Clear previous error on success
+            self.coordinator.last_error = None
+            
             # Force immediate update
             await self.coordinator.async_request_refresh()
+        except KaracaAPIError as err:
+            LOGGER.warning("Karaca API warning: %s", err)
+            self.coordinator.last_error = str(err)
+            self.coordinator.async_set_updated_data(self.coordinator.data)
+            
+            async def clear_error():
+                await asyncio.sleep(15)
+                if self.coordinator.last_error == str(err):
+                    self.coordinator.last_error = None
+                    self.coordinator.async_set_updated_data(self.coordinator.data)
+            
+            self.coordinator.hass.async_create_task(clear_error())
         except Exception as err:
             LOGGER.error("Failed to turn on tea maker: %s", err)
-            raise
 
     async def async_turn_off(self, **kwargs) -> None:
         """Turn the tea maker off (returns to StandBy mode)."""
@@ -73,8 +89,22 @@ class KaracaPowerSwitch(KaracaBaseEntity, SwitchEntity):
             path = f"/api/v1/devices/{self.coordinator.device_id}/modes/1"
             await self.client.async_request("PUT", path, json_data={"active": True})
             
+            # Clear previous error on success
+            self.coordinator.last_error = None
+            
             # Force immediate update
             await self.coordinator.async_request_refresh()
+        except KaracaAPIError as err:
+            LOGGER.warning("Karaca API warning: %s", err)
+            self.coordinator.last_error = str(err)
+            self.coordinator.async_set_updated_data(self.coordinator.data)
+            
+            async def clear_error():
+                await asyncio.sleep(15)
+                if self.coordinator.last_error == str(err):
+                    self.coordinator.last_error = None
+                    self.coordinator.async_set_updated_data(self.coordinator.data)
+            
+            self.coordinator.hass.async_create_task(clear_error())
         except Exception as err:
             LOGGER.error("Failed to turn off tea maker: %s", err)
-            raise

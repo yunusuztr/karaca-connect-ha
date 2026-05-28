@@ -66,6 +66,9 @@ class KaracaStatusSensor(KaracaBaseEntity, SensorEntity):
     @property
     def state(self) -> str:
         """Return the state of the sensor."""
+        if self.coordinator.last_error:
+            return f"Hata: {self.coordinator.last_error}"
+
         try:
             # Parse localized status label e.g., "Su Kaynatılıyor", "Su Hazır", "Kapalı"
             detail = self.coordinator.data.get("detail", {})
@@ -93,6 +96,7 @@ class KaracaStatusSensor(KaracaBaseEntity, SensorEntity):
                 "last_updated": detail.get("updatedDate"),
                 "state_code": detail.get("state"),
                 "mode_state_code": detail.get("modeState"),
+                "last_error": self.coordinator.last_error,
             }
         except Exception:
             return {}

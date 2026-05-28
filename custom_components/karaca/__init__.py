@@ -5,10 +5,13 @@ import aiohttp
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError, ConfigEntryAuthFailed
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, LOGGER, BASE_URL, CONF_NAME_PREFIX, DEFAULT_SCAN_INTERVAL
+
+class KaracaAPIError(Exception):
+    """Exception raised when Karaca API returns a business validation error."""
 
 PLATFORMS = [Platform.SENSOR, Platform.SELECT, Platform.SWITCH]
 
@@ -87,8 +90,8 @@ class KaracaAPIClient:
                                     if isinstance(res_json, dict) and not res_json.get("succeeded", True):
                                         messages = res_json.get("messages", [])
                                         err_msg = messages[0] if messages else f"status {retry_response.status}"
-                                        raise HomeAssistantError(f"Karaca Hatası: {err_msg}")
-                                except HomeAssistantError:
+                                        raise KaracaAPIError(err_msg)
+                                except KaracaAPIError:
                                     raise
                                 except Exception:
                                     pass
@@ -98,7 +101,7 @@ class KaracaAPIClient:
                             if isinstance(res_json, dict) and not res_json.get("succeeded", True):
                                 messages = res_json.get("messages", [])
                                 err_msg = messages[0] if messages else "Bilinmeyen bir hata oluştu."
-                                raise HomeAssistantError(f"Karaca Hatası: {err_msg}")
+                                raise KaracaAPIError(err_msg)
                             return res_json
                     
                     if response.status != 200:
@@ -107,8 +110,8 @@ class KaracaAPIClient:
                             if isinstance(res_json, dict) and not res_json.get("succeeded", True):
                                 messages = res_json.get("messages", [])
                                 err_msg = messages[0] if messages else f"returned status {response.status}"
-                                raise HomeAssistantError(f"Karaca Hatası: {err_msg}")
-                        except HomeAssistantError:
+                                raise KaracaAPIError(err_msg)
+                        except KaracaAPIError:
                             raise
                         except Exception:
                             pass
@@ -118,7 +121,7 @@ class KaracaAPIClient:
                     if isinstance(res_json, dict) and not res_json.get("succeeded", True):
                         messages = res_json.get("messages", [])
                         err_msg = messages[0] if messages else "Bilinmeyen bir hata oluştu."
-                        raise HomeAssistantError(f"Karaca Hatası: {err_msg}")
+                        raise KaracaAPIError(err_msg)
                     return res_json
             except aiohttp.ClientError as err:
                 raise UpdateFailed(f"Communication error with Karaca API: {err}")
@@ -193,6 +196,7 @@ class KaracaDataUpdateCoordinator(DataUpdateCoordinator):
         self.device_type = None
         self.device_name = None
         self.device_udid = None
+        self.last_error = None
 
         super().__init__(
             hass,

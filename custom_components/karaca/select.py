@@ -1,9 +1,11 @@
 """Platform for Karaca Connect select integration."""
+import asyncio
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from . import KaracaAPIError
 from .const import DOMAIN, LOGGER, CONF_NAME_PREFIX, DEFAULT_NAME, MODE_LABELS
 from .sensor import KaracaBaseEntity
 
@@ -65,8 +67,23 @@ class KaracaModeSelect(KaracaBaseEntity, SelectEntity):
             path = f"/api/v1/devices/{self.coordinator.device_id}/modes/{mode_id}"
             await self.client.async_request("PUT", path, json_data={"active": True})
             
+            # Clear previous error on success
+            self.coordinator.last_error = None
+            
             # Instantly update state in Home Assistant
             await self.coordinator.async_request_refresh()
+        except KaracaAPIError as err:
+            LOGGER.warning("Karaca API warning: %s", err)
+            self.coordinator.last_error = str(err)
+            self.coordinator.async_set_updated_data(self.coordinator.data)
+            
+            # Auto-clear error after 15 seconds to return to physical state
+            async def clear_error():
+                await asyncio.sleep(15)
+                if self.coordinator.last_error == str(err):
+                    self.coordinator.last_error = None
+                    self.coordinator.async_set_updated_data(self.coordinator.data)
+            
+            self.coordinator.hass.async_create_task(clear_error())
         except Exception as err:
             LOGGER.error("Failed to set mode: %s", err)
-            raise
