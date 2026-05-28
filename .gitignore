@@ -1,0 +1,11 @@
+﻿__pycache__/
+*.pyc
+*.pyo
+*.chlz
+*.chlz.zip
+*.zip
+*.har
+*clean_api.txt
+*login_clean.txt
+.DS_Store
+Thumbs.db
