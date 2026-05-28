@@ -1,5 +1,5 @@
 """Platform for Karaca Connect sensor integration."""
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -51,6 +51,7 @@ class KaracaBaseEntity(CoordinatorEntity):
 class KaracaStatusSensor(KaracaBaseEntity, SensorEntity):
     """Sensor that shows the human-readable status of the tea maker."""
 
+    _attr_device_class = SensorDeviceClass.ENUM
     _attr_icon = "mdi:kettle"
     _attr_options = [
         "Kapalı",
@@ -78,19 +79,26 @@ class KaracaStatusSensor(KaracaBaseEntity, SensorEntity):
     def state(self) -> str:
         """Return the state of the sensor."""
         if self.coordinator.last_error:
-            return f"Hata: {self.coordinator.last_error}"
+            return "Kapalı"
 
         try:
             # Parse localized status label e.g., "Su Kaynatılıyor", "Su Hazır", "Kapalı"
             detail = self.coordinator.data.get("detail", {})
             step_view = detail.get("stepView", {})
             label = step_view.get("label")
-            if label:
+            if label in self._attr_options:
                 return label
+            
+            # Fallback mappings if any slightly different API responses are received
+            if label:
+                LOGGER.debug("Status label '%s' not in preset options, falling back to Kapalı", label)
+                return "Kapalı"
             
             # Fallback
             mode_state_label = detail.get("modeStateLabel", "off")
-            return mode_state_label
+            if mode_state_label == "off":
+                return "Kapalı"
+            return "Kapalı"
         except Exception:
             return "Kapalı"
 
@@ -116,7 +124,15 @@ class KaracaStatusSensor(KaracaBaseEntity, SensorEntity):
 class KaracaModeSensor(KaracaBaseEntity, SensorEntity):
     """Sensor that shows the active mode of the tea maker."""
 
+    _attr_device_class = SensorDeviceClass.ENUM
     _attr_icon = "mdi:tune"
+    _attr_options = [
+        "Beklemede (Kapalı)",
+        "Filtre Kahve",
+        "Su Kaynatma",
+        "Çay Demleme",
+        "Mama Suyu",
+    ]
 
     def __init__(self, coordinator, entry: ConfigEntry, name_prefix: str):
         """Initialize the active mode sensor."""
@@ -135,6 +151,9 @@ class KaracaModeSensor(KaracaBaseEntity, SensorEntity):
             detail = self.coordinator.data.get("detail", {})
             mode_id = detail.get("mode", 1)
             # Map mode ID to friendly label (e.g. 6 -> "Su Kaynatma")
-            return MODE_LABELS.get(mode_id, f"Bilinmeyen Mod ({mode_id})")
+            val = MODE_LABELS.get(mode_id, "Beklemede (Kapalı)")
+            if val in self._attr_options:
+                return val
+            return "Beklemede (Kapalı)"
         except Exception:
             return "Beklemede (Kapalı)"
