@@ -1,9 +1,10 @@
 {
   "domain": "karaca",
   "name": "Karaca Connect",
-  "codeowners": ["@antigravity"],
+  "codeowners": ["@yunusuztr"],
   "config_flow": true,
-  "documentation": "https://github.com/karaca",
+  "documentation": "https://github.com/yunusuztr/karaca-connect-ha",
+  "issue_tracker": "https://github.com/yunusuztr/karaca-connect-ha/issues",
   "iot_class": "cloud_polling",
   "requirements": [],
   "version": "1.0.0"

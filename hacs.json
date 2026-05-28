@@ -1,7 +1,5 @@
-﻿{
-    "manifest":  "custom_components/karaca/manifest.json",
-    "homeassistant":  "2024.1.0",
-    "name":  "Karaca Connect Integration",
-    "type":  "integration",
-    "country":  "TR"
+{
+  "name": "Karaca Connect",
+  "homeassistant": "2024.1.0",
+  "country": "TR"
 }
