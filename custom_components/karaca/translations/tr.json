@@ -10,6 +10,21 @@
           "password": "Şifre",
           "name_prefix": "Cihaz adı ön eki"
         }
+      },
+      "device": {
+        "title": "Karaca Cihazı Seç",
+        "description": "Eklenecek Karaca cihazını seçin.",
+        "data": {
+          "device_id": "Cihaz"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Karaca Connect Tekrar Giriş",
+        "description": "Karaca Connect hesap bilgilerinizi tekrar girin.",
+        "data": {
+          "email": "E-posta",
+          "password": "Şifre"
+        }
       }
     },
     "error": {
@@ -19,7 +34,20 @@
       "unknown": "Beklenmeyen bir hata oluştu."
     },
     "abort": {
-      "already_configured": "Bu Karaca Connect hesabı zaten yapılandırılmış."
+      "already_configured": "Bu Karaca Connect cihazı zaten yapılandırılmış.",
+      "reauth_successful": "Karaca Connect tekrar girişi başarılı."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Karaca Connect Ayarları",
+        "data": {
+          "name_prefix": "Cihaz adı ön eki",
+          "scan_interval": "Güncelleme aralığı (saniye)",
+          "error_clear_seconds": "Hata gösterim süresi (saniye)"
+        }
+      }
     }
   }
 }

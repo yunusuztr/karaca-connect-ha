@@ -21,7 +21,10 @@ async def async_setup_entry(
     data = hass.data[DOMAIN][config_entry.entry_id]
     coordinator = data["coordinator"]
     client = data["client"]
-    name_prefix = config_entry.data.get(CONF_NAME_PREFIX, DEFAULT_NAME)
+    name_prefix = config_entry.options.get(
+        CONF_NAME_PREFIX,
+        config_entry.data.get(CONF_NAME_PREFIX, DEFAULT_NAME),
+    )
 
     async_add_entities([KaracaModeSelect(coordinator, client, config_entry, name_prefix)])
 
@@ -79,7 +82,7 @@ class KaracaModeSelect(KaracaBaseEntity, SelectEntity):
             
             # Auto-clear error after 15 seconds to return to physical state
             async def clear_error():
-                await asyncio.sleep(15)
+                await asyncio.sleep(self.coordinator.error_clear_seconds)
                 if self.coordinator.last_error == str(err):
                     self.coordinator.last_error = None
                     self.coordinator.async_set_updated_data(self.coordinator.data)

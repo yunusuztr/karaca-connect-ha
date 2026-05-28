@@ -6,14 +6,55 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DOMAIN, LOGGER, BASE_URL, CONF_NAME_PREFIX, DEFAULT_SCAN_INTERVAL
+from .const import (
+    DOMAIN,
+    LOGGER,
+    BASE_URL,
+    CONF_DEVICE_ID,
+    CONF_DEVICE_LABEL,
+    CONF_DEVICE_TYPE,
+    CONF_DEVICE_UDID,
+    CONF_ERROR_CLEAR_SECONDS,
+    CONF_REFRESH_TOKEN,
+    CONF_SCAN_INTERVAL,
+    DEFAULT_ERROR_CLEAR_SECONDS,
+    DEFAULT_SCAN_INTERVAL,
+)
 
 class KaracaAPIError(Exception):
     """Exception raised when Karaca API returns a business validation error."""
 
 PLATFORMS = [Platform.SENSOR, Platform.SELECT, Platform.SWITCH]
+_INTERNAL_UPDATE_SKIP = "_internal_update_skip"
+
+
+def _mark_entry_internal_update(hass: HomeAssistant, entry_id: str) -> None:
+    """Mark a config entry update that should not trigger an integration reload."""
+    skips = hass.data.setdefault(DOMAIN, {}).setdefault(_INTERNAL_UPDATE_SKIP, {})
+    skips[entry_id] = skips.get(entry_id, 0) + 1
+
+
+def _consume_entry_internal_update(hass: HomeAssistant, entry_id: str) -> bool:
+    """Return True when a config entry update was made internally by this integration."""
+    skips = hass.data.get(DOMAIN, {}).get(_INTERNAL_UPDATE_SKIP, {})
+    count = skips.get(entry_id, 0)
+    if count <= 0:
+        return False
+
+    if count == 1:
+        skips.pop(entry_id, None)
+    else:
+        skips[entry_id] = count - 1
+    return True
+
+
+def _clear_entry_internal_update(hass: HomeAssistant, entry_id: str) -> None:
+    """Clear any setup-time internal update markers before attaching listeners."""
+    skips = hass.data.get(DOMAIN, {}).get(_INTERNAL_UPDATE_SKIP, {})
+    skips.pop(entry_id, None)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Karaca Connect from a config entry."""
@@ -25,11 +66,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry,
         entry.data[CONF_EMAIL],
         entry.data[CONF_PASSWORD],
-        entry.data.get("refresh_token"),
+        entry.data.get(CONF_REFRESH_TOKEN),
     )
 
     # Initialize the coordinator
-    coordinator = KaracaDataUpdateCoordinator(hass, client)
+    coordinator = KaracaDataUpdateCoordinator(hass, entry, client)
     await coordinator.async_config_entry_first_refresh()
 
     hass.data[DOMAIN][entry.entry_id] = {
@@ -38,7 +79,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     }
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    _clear_entry_internal_update(hass, entry.entry_id)
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     return True
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload Karaca Connect when options change."""
+    if _consume_entry_internal_update(hass, entry.entry_id):
+        LOGGER.debug("Skipping Karaca reload after internal config entry data update.")
+        return
+
+    await hass.config_entries.async_reload(entry.entry_id)
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
@@ -60,10 +112,10 @@ class KaracaAPIClient:
         self.refresh_token = refresh_token
         self.jw_token = None
         self._lock = asyncio.Lock()
+        self.session = async_get_clientsession(hass)
 
     async def async_request(self, method: str, path: str, json_data=None) -> dict:
         """Perform an authorized API request, automatically refreshing tokens if needed."""
-        # Ensure we have a valid token
         if not self.jw_token:
             await self.async_ensure_token()
 
@@ -73,58 +125,63 @@ class KaracaAPIClient:
             "Authorization": f"Bearer {self.jw_token}",
         }
 
-        async with aiohttp.ClientSession() as session:
-            url = f"{BASE_URL}{path}"
-            try:
-                async with session.request(method, url, headers=headers, json=json_data, timeout=15) as response:
-                    if response.status == 401:
-                        # Token might have expired, force refresh and retry once
-                        LOGGER.warning("JWT Token expired (401), attempting to refresh token...")
-                        await self.async_ensure_token(force_refresh=True)
-                        headers["Authorization"] = f"Bearer {self.jw_token}"
-                        
-                        async with session.request(method, url, headers=headers, json=json_data, timeout=15) as retry_response:
-                            if retry_response.status != 200:
-                                try:
-                                    res_json = await retry_response.json()
-                                    if isinstance(res_json, dict) and not res_json.get("succeeded", True):
-                                        messages = res_json.get("messages", [])
-                                        err_msg = messages[0] if messages else f"status {retry_response.status}"
-                                        raise KaracaAPIError(err_msg)
-                                except KaracaAPIError:
-                                    raise
-                                except Exception:
-                                    pass
-                                raise UpdateFailed(f"API request failed after token refresh: status {retry_response.status}")
-                            
-                            res_json = await retry_response.json()
-                            if isinstance(res_json, dict) and not res_json.get("succeeded", True):
-                                messages = res_json.get("messages", [])
-                                err_msg = messages[0] if messages else "Bilinmeyen bir hata oluştu."
-                                raise KaracaAPIError(err_msg)
-                            return res_json
-                    
-                    if response.status != 200:
-                        try:
-                            res_json = await response.json()
-                            if isinstance(res_json, dict) and not res_json.get("succeeded", True):
-                                messages = res_json.get("messages", [])
-                                err_msg = messages[0] if messages else f"returned status {response.status}"
-                                raise KaracaAPIError(err_msg)
-                        except KaracaAPIError:
-                            raise
-                        except Exception:
-                            pass
-                        raise UpdateFailed(f"API request failed: {method} {path} returned status {response.status}")
-                    
-                    res_json = await response.json()
-                    if isinstance(res_json, dict) and not res_json.get("succeeded", True):
-                        messages = res_json.get("messages", [])
-                        err_msg = messages[0] if messages else "Bilinmeyen bir hata oluştu."
-                        raise KaracaAPIError(err_msg)
-                    return res_json
-            except aiohttp.ClientError as err:
-                raise UpdateFailed(f"Communication error with Karaca API: {err}")
+        url = f"{BASE_URL}{path}"
+        try:
+            async with self.session.request(method, url, headers=headers, json=json_data, timeout=15) as response:
+                if response.status == 401:
+                    LOGGER.warning("JWT Token expired (401), attempting to refresh token...")
+                    await self.async_ensure_token(force_refresh=True)
+                    headers["Authorization"] = f"Bearer {self.jw_token}"
+
+                    async with self.session.request(method, url, headers=headers, json=json_data, timeout=15) as retry_response:
+                        if retry_response.status in (401, 403):
+                            raise ConfigEntryAuthFailed("Karaca Connect credentials are no longer valid.")
+                        if retry_response.status != 200:
+                            try:
+                                res_json = await retry_response.json()
+                                if isinstance(res_json, dict) and not res_json.get("succeeded", True):
+                                    messages = res_json.get("messages", [])
+                                    err_msg = messages[0] if messages else f"status {retry_response.status}"
+                                    raise KaracaAPIError(err_msg)
+                            except KaracaAPIError:
+                                raise
+                            except Exception:
+                                pass
+                            raise UpdateFailed(
+                                f"API request failed after token refresh: status {retry_response.status}"
+                            )
+
+                        res_json = await retry_response.json()
+                        if isinstance(res_json, dict) and not res_json.get("succeeded", True):
+                            messages = res_json.get("messages", [])
+                            err_msg = messages[0] if messages else "Bilinmeyen bir hata oluştu."
+                            raise KaracaAPIError(err_msg)
+                        return res_json
+
+                if response.status in (401, 403):
+                    raise ConfigEntryAuthFailed("Karaca Connect credentials are no longer valid.")
+
+                if response.status != 200:
+                    try:
+                        res_json = await response.json()
+                        if isinstance(res_json, dict) and not res_json.get("succeeded", True):
+                            messages = res_json.get("messages", [])
+                            err_msg = messages[0] if messages else f"returned status {response.status}"
+                            raise KaracaAPIError(err_msg)
+                    except KaracaAPIError:
+                        raise
+                    except Exception:
+                        pass
+                    raise UpdateFailed(f"API request failed: {method} {path} returned status {response.status}")
+
+                res_json = await response.json()
+                if isinstance(res_json, dict) and not res_json.get("succeeded", True):
+                    messages = res_json.get("messages", [])
+                    err_msg = messages[0] if messages else "Bilinmeyen bir hata oluştu."
+                    raise KaracaAPIError(err_msg)
+                return res_json
+        except aiohttp.ClientError as err:
+            raise UpdateFailed(f"Communication error with Karaca API: {err}")
 
     async def async_ensure_token(self, force_refresh=False):
         """Ensure we have a valid JWT token, refreshing it if expired or forced."""
@@ -132,77 +189,84 @@ class KaracaAPIClient:
             if self.jw_token and not force_refresh:
                 return
 
-            async with aiohttp.ClientSession() as session:
-                # Try refresh token first if we have one and not forced to do a fresh login
-                if self.refresh_token and not force_refresh:
-                    try:
-                        LOGGER.debug("Attempting to refresh JWT token via refresh token...")
-                        refresh_url = f"{BASE_URL}/api/auth/refresh-token"
-                        payload = {"refreshToken": self.refresh_token}
-                        
-                        async with session.post(refresh_url, json=payload, timeout=10) as response:
-                            if response.status == 200:
-                                res_json = await response.json()
-                                if res_json.get("succeeded") and "data" in res_json:
-                                    data = res_json["data"]
-                                    self.jw_token = data["jwToken"]
-                                    new_refresh = data["refreshToken"]
-                                    
-                                    # Save new tokens
-                                    self.refresh_token = new_refresh
-                                    new_data = dict(self.entry.data)
-                                    new_data["refresh_token"] = new_refresh
-                                    self.hass.config_entries.async_update_entry(self.entry, data=new_data)
-                                    LOGGER.debug("JWT Token successfully refreshed.")
-                                    return
-                    except Exception as err:  # pylint: disable=broad-except
-                        LOGGER.warning("Refresh token flow failed: %s, falling back to full signin.", err)
-
-                # Fallback or Force: Full signin with password
-                LOGGER.info("Performing full password-based login to Karaca API...")
-                login_url = f"{BASE_URL}/api/auth/signin"
-                payload = {"email": self.email, "password": self.password}
-                
+            if self.refresh_token and not force_refresh:
                 try:
-                    async with session.post(login_url, json=payload, timeout=10) as response:
-                        if response.status != 200:
-                            raise UpdateFailed(f"Login failed: status code {response.status}")
-                        
-                        res_json = await response.json()
-                        if not res_json.get("succeeded") or "data" not in res_json:
-                            raise UpdateFailed("Login failed: invalid credentials or failed API status.")
-                        
-                        data = res_json["data"]
-                        self.jw_token = data["jwToken"]
-                        new_refresh = data["refreshToken"]
-                        
-                        # Save new tokens
-                        self.refresh_token = new_refresh
-                        new_data = dict(self.entry.data)
-                        new_data["refresh_token"] = new_refresh
-                        self.hass.config_entries.async_update_entry(self.entry, data=new_data)
-                        LOGGER.info("Successfully signed in and retrieved new session tokens.")
-                except Exception as err:
-                    raise UpdateFailed(f"Failed to authenticate with Karaca Connect: {err}")
+                    LOGGER.debug("Attempting to refresh JWT token via refresh token...")
+                    refresh_url = f"{BASE_URL}/api/auth/refresh-token"
+                    payload = {"refreshToken": self.refresh_token}
+
+                    async with self.session.post(refresh_url, json=payload, timeout=10) as response:
+                        if response.status == 200:
+                            res_json = await response.json()
+                            if res_json.get("succeeded") and "data" in res_json:
+                                data = res_json["data"]
+                                self.jw_token = data["jwToken"]
+                                new_refresh = data["refreshToken"]
+
+                                self.refresh_token = new_refresh
+                                new_data = dict(self.entry.data)
+                                new_data[CONF_REFRESH_TOKEN] = new_refresh
+                                _mark_entry_internal_update(self.hass, self.entry.entry_id)
+                                self.hass.config_entries.async_update_entry(self.entry, data=new_data)
+                                LOGGER.debug("JWT Token successfully refreshed.")
+                                return
+                except Exception as err:  # pylint: disable=broad-except
+                    LOGGER.warning("Refresh token flow failed: %s, falling back to full signin.", err)
+
+            LOGGER.info("Performing full password-based login to Karaca API...")
+            login_url = f"{BASE_URL}/api/auth/signin"
+            payload = {"email": self.email, "password": self.password}
+
+            try:
+                async with self.session.post(login_url, json=payload, timeout=10) as response:
+                    if response.status in (401, 403):
+                        raise ConfigEntryAuthFailed("Karaca Connect credentials are no longer valid.")
+                    if response.status != 200:
+                        raise UpdateFailed(f"Login failed: status code {response.status}")
+
+                    res_json = await response.json()
+                    if not res_json.get("succeeded") or "data" not in res_json:
+                        raise ConfigEntryAuthFailed("Karaca Connect credentials are no longer valid.")
+
+                    data = res_json["data"]
+                    self.jw_token = data["jwToken"]
+                    new_refresh = data["refreshToken"]
+
+                    self.refresh_token = new_refresh
+                    new_data = dict(self.entry.data)
+                    new_data[CONF_REFRESH_TOKEN] = new_refresh
+                    _mark_entry_internal_update(self.hass, self.entry.entry_id)
+                    self.hass.config_entries.async_update_entry(self.entry, data=new_data)
+                    LOGGER.info("Successfully signed in and retrieved new session tokens.")
+            except ConfigEntryAuthFailed:
+                raise
+            except Exception as err:
+                raise UpdateFailed(f"Failed to authenticate with Karaca Connect: {err}")
 
 
 class KaracaDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching Karaca Connect device telemetry."""
 
-    def __init__(self, hass: HomeAssistant, client: KaracaAPIClient):
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, client: KaracaAPIClient):
         """Initialize the coordinator."""
+        self.entry = entry
         self.client = client
-        self.device_id = None
-        self.device_type = None
-        self.device_name = None
-        self.device_udid = None
+        self.device_id = entry.data.get(CONF_DEVICE_ID)
+        self.device_type = entry.data.get(CONF_DEVICE_TYPE)
+        self.device_name = entry.data.get(CONF_DEVICE_LABEL)
+        self.device_udid = entry.data.get(CONF_DEVICE_UDID)
         self.last_error = None
+        self.error_clear_seconds = entry.options.get(
+            CONF_ERROR_CLEAR_SECONDS,
+            DEFAULT_ERROR_CLEAR_SECONDS,
+        )
+        scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
         super().__init__(
             hass,
             LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
+            update_interval=timedelta(seconds=scan_interval),
         )
 
     async def _async_update_data(self):
@@ -226,10 +290,24 @@ class KaracaDataUpdateCoordinator(DataUpdateCoordinator):
                 if not tea_maker:
                     tea_maker = devices[0]
 
-                self.device_id = tea_maker["id"]
-                self.device_type = tea_maker["type"]
-                self.device_name = tea_maker["label"]
-                self.device_udid = tea_maker["udid"]
+                self.device_id = str(tea_maker["id"])
+                self.device_type = tea_maker.get("type")
+                self.device_name = tea_maker.get("label") or "Karaca cihaz"
+                self.device_udid = tea_maker.get("udid") or self.device_id
+                new_data = dict(self.entry.data)
+                new_data.update(
+                    {
+                        CONF_DEVICE_ID: str(self.device_id),
+                        CONF_DEVICE_TYPE: self.device_type,
+                        CONF_DEVICE_LABEL: self.device_name,
+                        CONF_DEVICE_UDID: self.device_udid,
+                    }
+                )
+                _mark_entry_internal_update(self.client.hass, self.entry.entry_id)
+                self.client.hass.config_entries.async_update_entry(
+                    self.entry,
+                    data=new_data,
+                )
                 LOGGER.info("Discovered Karaca device: ID=%s, Name=%s", self.device_id, self.device_name)
 
             # Fetch detailed state
@@ -240,5 +318,7 @@ class KaracaDataUpdateCoordinator(DataUpdateCoordinator):
                 raise UpdateFailed("Failed to fetch detailed device telemetry.")
 
             return device_state
+        except ConfigEntryAuthFailed:
+            raise
         except Exception as err:
             raise UpdateFailed(f"Error fetching data: {err}")

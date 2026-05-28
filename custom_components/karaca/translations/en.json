@@ -10,6 +10,21 @@
           "password": "Password",
           "name_prefix": "Device name prefix"
         }
+      },
+      "device": {
+        "title": "Select Karaca Device",
+        "description": "Choose the Karaca device to add.",
+        "data": {
+          "device_id": "Device"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate Karaca Connect",
+        "description": "Enter your Karaca Connect credentials again.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
       }
     },
     "error": {
@@ -19,7 +34,20 @@
       "unknown": "Unexpected error."
     },
     "abort": {
-      "already_configured": "This Karaca Connect account is already configured."
+      "already_configured": "This Karaca Connect device is already configured.",
+      "reauth_successful": "Karaca Connect reauthentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Karaca Connect Options",
+        "data": {
+          "name_prefix": "Device name prefix",
+          "scan_interval": "Update interval in seconds",
+          "error_clear_seconds": "Error display duration in seconds"
+        }
+      }
     }
   }
 }
