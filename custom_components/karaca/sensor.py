@@ -52,6 +52,17 @@ class KaracaStatusSensor(KaracaBaseEntity, SensorEntity):
     """Sensor that shows the human-readable status of the tea maker."""
 
     _attr_icon = "mdi:kettle"
+    _attr_options = [
+        "Kapalı",
+        "Su Kaynatılıyor",
+        "Su Hazır",
+        "Çay Demleniyor",
+        "Çay Hazır (Taze)",
+        "Filtre Kahve Demleniyor",
+        "Kahve Hazır",
+        "Mama Suyu Isıtılıyor",
+        "Mama Suyu Hazır",
+    ]
 
     def __init__(self, coordinator, entry: ConfigEntry, name_prefix: str):
         """Initialize the status sensor."""
