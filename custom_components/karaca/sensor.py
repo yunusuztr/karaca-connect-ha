@@ -14,8 +14,12 @@ from .const import (
     DEFAULT_NAME,
     DOMAIN,
     LOGGER,
+    MODE_BABY_FOOD,
+    MODE_BOILING_WATER,
+    MODE_FILTER_COFFEE,
     MODE_LABELS,
     MODE_STANDBY,
+    MODE_TEA_BREWING,
     normalize_key,
     normalize_mode_id,
 )
@@ -105,6 +109,17 @@ FRESHNESS_OPTIONS = [
     FRESHNESS_STALE,
     FRESHNESS_OFF,
     FRESHNESS_UNKNOWN,
+]
+
+MODE_STATUS_OFF = "Kapalı"
+MODE_STATUS_STANDBY = "Beklemede"
+MODE_SENSOR_OPTIONS = [
+    MODE_STATUS_OFF,
+    MODE_STATUS_STANDBY,
+    MODE_LABELS[MODE_BOILING_WATER],
+    MODE_LABELS[MODE_TEA_BREWING],
+    MODE_LABELS[MODE_FILTER_COFFEE],
+    MODE_LABELS[MODE_BABY_FOOD],
 ]
 
 
@@ -415,7 +430,7 @@ class KaracaModeSensor(KaracaBaseEntity, SensorEntity):
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_icon = "mdi:tune"
-    _attr_options = list(MODE_LABELS.values())
+    _attr_options = MODE_SENSOR_OPTIONS
 
     def __init__(self, coordinator, entry: ConfigEntry, name_prefix: str):
         """Initialize the active mode sensor."""
@@ -428,14 +443,26 @@ class KaracaModeSensor(KaracaBaseEntity, SensorEntity):
         return f"{self.coordinator.device_udid}_mode"
 
     @property
+    def available(self) -> bool:
+        """Keep active mode visible so disconnected devices can show Kapalı."""
+        return self.coordinator.last_update_success and self.coordinator.data is not None
+
+    @property
     def native_value(self) -> str:
         """Return the native value of the sensor."""
         try:
             detail = self.coordinator.data.get("detail", {})
+            meta = self.coordinator.data.get("meta", {})
+            if meta.get("connected") is False:
+                return MODE_STATUS_OFF
+
             mode_id = normalize_mode_id(detail.get("mode"))
-            return MODE_LABELS.get(mode_id, MODE_LABELS[MODE_STANDBY])
+            if mode_id == MODE_STANDBY:
+                return MODE_STATUS_STANDBY
+
+            return MODE_LABELS.get(mode_id, MODE_STATUS_STANDBY)
         except Exception:  # pylint: disable=broad-except
-            return MODE_LABELS[MODE_STANDBY]
+            return MODE_STATUS_STANDBY
 
 
 class KaracaFreshnessSensor(KaracaBaseEntity, SensorEntity):

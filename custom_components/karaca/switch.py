@@ -63,7 +63,7 @@ async def async_setup_entry(
         config_entry.data.get(CONF_NAME_PREFIX, DEFAULT_NAME),
     )
 
-    entities = [KaracaPowerSwitch(coordinator, client, config_entry, name_prefix)]
+    entities = []
     entities.extend(
         KaracaModeSwitch(coordinator, client, config_entry, name_prefix, mode_id, name)
         for mode_id, name in MODE_SWITCHES
@@ -90,59 +90,6 @@ async def async_setup_entry(
     )
 
     async_add_entities(entities)
-
-
-class KaracaPowerSwitch(KaracaBaseEntity, SwitchEntity):
-    """Switch entity representing the master power state of the tea maker."""
-
-    _attr_icon = "mdi:power"
-
-    def __init__(self, coordinator, client, entry: ConfigEntry, name_prefix: str):
-        """Initialize the power switch entity."""
-        super().__init__(coordinator, entry, name_prefix)
-        self.client = client
-        self._attr_name = f"{self.name_prefix} Güç"
-
-    @property
-    def unique_id(self) -> str:
-        """Return a unique ID."""
-        return f"{self.coordinator.device_udid}_power_switch"
-
-    @property
-    def is_on(self) -> bool:
-        """Return true if the tea maker is active."""
-        try:
-            detail = self.coordinator.data.get("detail", {})
-            return normalize_mode_id(detail.get("mode")) != MODE_STANDBY
-        except Exception:  # pylint: disable=broad-except
-            return False
-
-    async def async_turn_on(self, **kwargs) -> None:
-        """Turn the tea maker on in boiling water mode."""
-        LOGGER.info("Turning on Karaca tea maker in boiling water mode.")
-        await self._async_set_mode(MODE_BOILING_WATER)
-
-    async def async_turn_off(self, **kwargs) -> None:
-        """Turn the tea maker off by returning it to standby."""
-        LOGGER.info("Turning off Karaca tea maker.")
-        await self._async_set_mode(MODE_STANDBY)
-
-    async def _async_set_mode(self, mode_id: int) -> None:
-        """Send a mode command with error handling."""
-        if not self.client.command_allowed():
-            LOGGER.debug("Karaca command skipped because cooldown is active.")
-            await self.async_refresh_after_command()
-            return
-
-        try:
-            await self.client.async_set_mode(self.coordinator.device_id, mode_id)
-            self.coordinator.last_error = None
-            await self.async_refresh_after_command()
-        except KaracaAPIError as err:
-            LOGGER.warning("Karaca API warning: %s", err)
-            self.set_temporary_error(str(err))
-        except Exception as err:  # pylint: disable=broad-except
-            LOGGER.error("Failed to set Karaca power state: %s", err)
 
 
 class KaracaModeSwitch(KaracaBaseEntity, SwitchEntity):

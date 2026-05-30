@@ -35,7 +35,7 @@ MODES = {
 }
 
 MODE_LABELS = {
-    MODE_STANDBY: "Beklemede (Kapalı)",
+    MODE_STANDBY: "Beklemede",
     MODE_FILTER_COFFEE: "Filtre Kahve",
     MODE_BOILING_WATER: "Su Kaynatma",
     MODE_TEA_BREWING: "Çay Demleme",

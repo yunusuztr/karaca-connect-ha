@@ -28,7 +28,7 @@ from .const import (
 class KaracaAPIError(Exception):
     """Exception raised when Karaca API returns a business validation error."""
 
-PLATFORMS = [Platform.SENSOR, Platform.SELECT, Platform.SWITCH]
+PLATFORMS = [Platform.SENSOR, Platform.SWITCH]
 _INTERNAL_UPDATE_SKIP = "_internal_update_skip"
 
 

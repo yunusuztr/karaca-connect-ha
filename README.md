@@ -18,9 +18,8 @@ Bu entegrasyon Karaca Connect bulut API'sini kullanarak çay makinenizin durumun
 
 - **Kurulum akışı:** Home Assistant arayüzünden e-posta ve şifre ile kurulum.
 - **Cihaz seçimi:** Hesabınızda birden fazla desteklenen Karaca cihaz varsa kurulumda cihaz seçimi.
-- **Mod kontrolü:** Su kaynatma, çay demleme, filtre kahve, mama suyu ve standby modları.
-- **Hızlı mod switchleri:** Su kaynatma, çay demleme, filtre kahve ve mama suyu için ayrı switch entityleri.
-- **Güç anahtarı:** Cihazı varsayılan olarak su kaynatma modunda başlatma veya standby'a alma.
+- **Mod kontrolü:** Su kaynatma, çay demleme, filtre kahve ve mama suyu için ayrı switch entityleri.
+- **Aktif mod sensörü:** Cihaz bağlı ve beklemedeyse `Beklemede`, bağlı değilse `Kapalı` gösterir.
 - **Durum sensörü:** `Su Kaynatılıyor`, `Su Hazır`, `Çay Demleniyor`, `Çay Hazır (Taze)`, `Çay Hazır (Bayat)`, `Kapalı` ve hata durumlarını enum sensör olarak sunar.
 - **Tazelik takibi:** Çay demlendikten sonra API tazelik/countdown verisi veya 60 dakikalık tazelik süresi ile `Taze/Bayat` ayrımı yapılır.
 - **Tazelik sensörü:** Çayın taze, bayat veya kapalı olduğunu ayrı enum sensör olarak gösterir.
@@ -66,9 +65,8 @@ This integration connects to the Karaca Connect cloud API and exposes your smart
 
 - **Config flow:** Set up from the Home Assistant UI with email and password.
 - **Device selection:** Choose a supported Karaca device when multiple devices exist on the account.
-- **Mode control:** Boiling water, tea brewing, filter coffee, baby water, and standby modes.
-- **Quick mode switches:** Separate switch entities for boiling water, tea brewing, filter coffee, and baby water.
-- **Power switch:** Start the device in boiling water mode or return it to standby.
+- **Mode control:** Separate switch entities for boiling water, tea brewing, filter coffee, and baby water.
+- **Active mode sensor:** Shows `Beklemede` when the device is connected and idle, and `Kapalı` when it is disconnected.
 - **Status sensor:** Exposes stable enum states such as `Su Kaynatılıyor`, `Su Hazır`, `Çay Demleniyor`, `Çay Hazır (Taze)`, `Çay Hazır (Bayat)`, `Kapalı`, and mapped error states.
 - **Freshness handling:** Brewed tea is marked fresh/stale from API freshness/countdown data or the 60-minute freshness window.
 - **Freshness sensor:** Exposes tea freshness as a separate enum sensor.
