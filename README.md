@@ -8,11 +8,17 @@
 
 [EN] Home Assistant custom integration for the Karaca Çaysever Robotea Pro Connect 4in1 smart tea maker.
 
+> [TR] Bu proje resmi olmayan, topluluk tarafından geliştirilen bir Home Assistant özel entegrasyonudur. Karaca ile bağlantılı değildir; Karaca tarafından geliştirilmemiş, desteklenmemiş veya onaylanmamıştır.
+>
+> [EN] This is an unofficial, community-developed Home Assistant custom integration. It is not affiliated with, endorsed by, supported by, or maintained by Karaca.
+
 ---
 
 ## Türkçe
 
 Bu entegrasyon Karaca Connect bulut API'sini kullanarak çay makinenizin durumunu Home Assistant'a aktarır ve cihaz modlarını kontrol etmenizi sağlar.
+
+Bu proje resmi değildir. Karaca Connect bulut API'si değişirse entegrasyonun çalışması etkilenebilir. Kullanım sorumluluğu kullanıcıya aittir.
 
 ### Özellikler
 
@@ -61,6 +67,8 @@ action:
 
 This integration connects to the Karaca Connect cloud API and exposes your smart tea maker in Home Assistant.
 
+This project is unofficial. If the Karaca Connect cloud API changes, the integration may stop working or require updates. Use it at your own risk.
+
 ### Features
 
 - **Config flow:** Set up from the Home Assistant UI with email and password.
@@ -90,4 +98,6 @@ This integration connects to the Karaca Connect cloud API and exposes your smart
 
 ## License & Disclaimer
 
-This is a community-driven custom integration and is not affiliated with Karaca. Product names, logos, and brands belong to their respective owners.
+This is an unofficial, community-driven custom integration and is not affiliated with Karaca. It is not developed, supported, endorsed, or maintained by Karaca.
+
+Product names, logos, and brands belong to their respective owners. Use this integration at your own risk.
