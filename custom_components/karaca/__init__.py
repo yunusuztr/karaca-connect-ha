@@ -1,6 +1,7 @@
 """The Karaca Connect integration."""
 import asyncio
 from datetime import timedelta
+import time
 import aiohttp
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, Platform
@@ -112,7 +113,16 @@ class KaracaAPIClient:
         self.refresh_token = refresh_token
         self.jw_token = None
         self._lock = asyncio.Lock()
+        self._last_command_at = 0.0
         self.session = async_get_clientsession(hass)
+
+    def command_allowed(self, cooldown_seconds: float = 3.0) -> bool:
+        """Return if a cloud command may be sent without hitting cooldown."""
+        now = time.monotonic()
+        if now - self._last_command_at < cooldown_seconds:
+            return False
+        self._last_command_at = now
+        return True
 
     async def async_request(self, method: str, path: str, json_data=None) -> dict:
         """Perform an authorized API request, automatically refreshing tokens if needed."""
@@ -182,6 +192,30 @@ class KaracaAPIClient:
                 return res_json
         except aiohttp.ClientError as err:
             raise UpdateFailed(f"Communication error with Karaca API: {err}")
+
+    async def async_set_mode(self, device_id: str, mode_id: int, active: bool = True) -> dict:
+        """Activate a Karaca device mode."""
+        return await self.async_request(
+            "PUT",
+            f"/api/v1/devices/{device_id}/modes/{mode_id}",
+            json_data={"active": active},
+        )
+
+    async def async_get_settings(self, device_id: str) -> list[dict]:
+        """Return device notification and voice settings."""
+        data = await self.async_request("GET", f"/api/v1/devices/{device_id}/settings")
+        settings_data = data.get("data", {})
+        if isinstance(settings_data, dict):
+            return settings_data.get("notifications", [])
+        return []
+
+    async def async_set_setting(self, device_id: str, setting_id: int, value: bool) -> dict:
+        """Update a Karaca device setting."""
+        path = f"/api/v1/devices/{device_id}/settings/{setting_id}"
+        try:
+            return await self.async_request("PUT", path, json_data={"value": value})
+        except KaracaAPIError:
+            return await self.async_request("PUT", path, json_data={"active": value})
 
     async def async_ensure_token(self, force_refresh=False):
         """Ensure we have a valid JWT token, refreshing it if expired or forced."""

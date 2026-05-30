@@ -1,12 +1,18 @@
 """Platform for Karaca Connect select integration."""
-import asyncio
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import KaracaAPIError
-from .const import DOMAIN, LOGGER, CONF_NAME_PREFIX, DEFAULT_NAME, MODE_LABELS
+from .const import (
+    CONF_NAME_PREFIX,
+    DEFAULT_NAME,
+    DOMAIN,
+    LOGGER,
+    MODE_LABELS,
+    normalize_mode_id,
+)
 from .sensor import KaracaBaseEntity
 
 # Reverse mapping for setting modes
@@ -51,7 +57,7 @@ class KaracaModeSelect(KaracaBaseEntity, SelectEntity):
         """Return the currently selected option."""
         try:
             detail = self.coordinator.data.get("detail", {})
-            mode_id = detail.get("mode", 1)
+            mode_id = normalize_mode_id(detail.get("mode"))
             return MODE_LABELS.get(mode_id, "Beklemede (Kapalı)")
         except Exception:
             return "Beklemede (Kapalı)"
@@ -64,29 +70,18 @@ class KaracaModeSelect(KaracaBaseEntity, SelectEntity):
             return
 
         LOGGER.info("Setting Karaca mode to: %s (ID=%s)", option, mode_id)
-        
-        # Send command to set mode to active
+
+        if not self.client.command_allowed():
+            LOGGER.debug("Karaca select command skipped because cooldown is active.")
+            await self.async_refresh_after_command()
+            return
+
         try:
-            path = f"/api/v1/devices/{self.coordinator.device_id}/modes/{mode_id}"
-            await self.client.async_request("PUT", path, json_data={"active": True})
-            
-            # Clear previous error on success
+            await self.client.async_set_mode(self.coordinator.device_id, mode_id)
             self.coordinator.last_error = None
-            
-            # Instantly update state in Home Assistant
-            await self.coordinator.async_request_refresh()
+            await self.async_refresh_after_command()
         except KaracaAPIError as err:
             LOGGER.warning("Karaca API warning: %s", err)
-            self.coordinator.last_error = str(err)
-            self.coordinator.async_set_updated_data(self.coordinator.data)
-            
-            # Auto-clear error after 15 seconds to return to physical state
-            async def clear_error():
-                await asyncio.sleep(self.coordinator.error_clear_seconds)
-                if self.coordinator.last_error == str(err):
-                    self.coordinator.last_error = None
-                    self.coordinator.async_set_updated_data(self.coordinator.data)
-            
-            self.coordinator.hass.async_create_task(clear_error())
+            self.set_temporary_error(str(err))
         except Exception as err:
             LOGGER.error("Failed to set mode: %s", err)

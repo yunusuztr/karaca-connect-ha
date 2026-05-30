@@ -19,11 +19,15 @@ Bu entegrasyon Karaca Connect bulut API'sini kullanarak çay makinenizin durumun
 - **Kurulum akışı:** Home Assistant arayüzünden e-posta ve şifre ile kurulum.
 - **Cihaz seçimi:** Hesabınızda birden fazla desteklenen Karaca cihaz varsa kurulumda cihaz seçimi.
 - **Mod kontrolü:** Su kaynatma, çay demleme, filtre kahve, mama suyu ve standby modları.
+- **Hızlı mod switchleri:** Su kaynatma, çay demleme, filtre kahve ve mama suyu için ayrı switch entityleri.
 - **Güç anahtarı:** Cihazı varsayılan olarak su kaynatma modunda başlatma veya standby'a alma.
-- **Durum sensörü:** `Su Kaynatılıyor`, `Su Hazır`, `Çay Demleniyor`, `Çay Hazır (Taze)`, `Kapalı` ve hata durumlarını enum sensör olarak sunar.
-- **Tazelik takibi:** Çay hazır olduğunda tazelik/countdown bilgisi varsa durum `Çay Hazır (Taze)` olarak kalır.
+- **Durum sensörü:** `Su Kaynatılıyor`, `Su Hazır`, `Çay Demleniyor`, `Çay Hazır (Taze)`, `Çay Hazır (Bayat)`, `Kapalı` ve hata durumlarını enum sensör olarak sunar.
+- **Tazelik takibi:** Çay demlendikten sonra API tazelik/countdown verisi veya 60 dakikalık tazelik süresi ile `Taze/Bayat` ayrımı yapılır.
+- **Tazelik sensörü:** Çayın taze, bayat veya kapalı olduğunu ayrı enum sensör olarak gösterir.
 - **Hata eşleme:** Su yok, hedef sıcaklık uygun değil, temizlik gerekli ve genel cihaz uyarıları sabit enum durumları olarak gösterilir.
+- **Cihaz ayar switchleri:** Çay bildirimi, filtre kahve bildirimi, tazelik bildirimi, kapanma bildirimi, su kalmadı bildirimi, anımsatıcılar, konuşma sesi ve temizlik bildirimi kontrol edilebilir.
 - **Ayarlar:** Entegrasyon ayarlarından ad ön eki, güncelleme aralığı ve hata mesajının ekranda kalma süresi değiştirilebilir.
+- **Hızlı takip yenilemesi:** Komut gönderildikten sonra cihaz durumu kısa aralıklarla yeniden kontrol edilir.
 - **Kimlik doğrulama:** Token yenileme ve yeniden kimlik doğrulama akışı desteklenir.
 - **Dil desteği:** Türkçe ve İngilizce çeviriler bulunur.
 - **Diagnostics:** Sorun bildirimi için Home Assistant diagnostics desteği vardır.
@@ -63,11 +67,15 @@ This integration connects to the Karaca Connect cloud API and exposes your smart
 - **Config flow:** Set up from the Home Assistant UI with email and password.
 - **Device selection:** Choose a supported Karaca device when multiple devices exist on the account.
 - **Mode control:** Boiling water, tea brewing, filter coffee, baby water, and standby modes.
+- **Quick mode switches:** Separate switch entities for boiling water, tea brewing, filter coffee, and baby water.
 - **Power switch:** Start the device in boiling water mode or return it to standby.
-- **Status sensor:** Exposes stable enum states such as `Su Kaynatılıyor`, `Su Hazır`, `Çay Demleniyor`, `Çay Hazır (Taze)`, `Kapalı`, and mapped error states.
-- **Freshness handling:** When tea freshness/countdown data is active, the status remains `Çay Hazır (Taze)`.
+- **Status sensor:** Exposes stable enum states such as `Su Kaynatılıyor`, `Su Hazır`, `Çay Demleniyor`, `Çay Hazır (Taze)`, `Çay Hazır (Bayat)`, `Kapalı`, and mapped error states.
+- **Freshness handling:** Brewed tea is marked fresh/stale from API freshness/countdown data or the 60-minute freshness window.
+- **Freshness sensor:** Exposes tea freshness as a separate enum sensor.
 - **Error mapping:** Water empty, invalid target temperature, cleaning required, and generic device warnings are exposed as stable enum states.
+- **Device setting switches:** Tea, filter coffee, freshness, power-off, no-water, reminder, voice, and cleaning notification settings can be controlled.
 - **Options flow:** Configure name prefix, polling interval, and how long command errors remain visible.
+- **Fast follow-up refresh:** Device state is refreshed shortly after cloud commands.
 - **Authentication:** Refresh-token handling and reauthentication support.
 - **Translations:** Turkish and English UI translations.
 - **Diagnostics:** Home Assistant diagnostics support for issue reports.
