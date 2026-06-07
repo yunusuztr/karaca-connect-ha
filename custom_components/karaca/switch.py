@@ -131,6 +131,7 @@ class KaracaModeSwitch(KaracaBaseEntity, SwitchEntity):
         """Return mode metadata."""
         detail = self.coordinator.data.get("detail", {}) if self.coordinator.data else {}
         return {
+            "karaca_role": "mode_switch",
             "mode_id": self.mode_id,
             "mode_name": MODE_LABELS.get(self.mode_id, self.mode_name),
             "current_mode": detail.get("mode"),
@@ -211,7 +212,10 @@ class KaracaSettingSwitch(KaracaBaseEntity, SwitchEntity):
     @property
     def extra_state_attributes(self) -> dict:
         """Return setting metadata."""
-        return {"setting_id": self.setting_id}
+        return {
+            "karaca_role": "setting_switch",
+            "setting_id": self.setting_id,
+        }
 
     async def async_turn_on(self, **kwargs) -> None:
         """Enable this setting."""

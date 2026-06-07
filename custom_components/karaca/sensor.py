@@ -410,6 +410,7 @@ class KaracaStatusSensor(KaracaBaseEntity, SensorEntity):
             meta = self.coordinator.data.get("meta", {})
             fresh_until = _fresh_until_from_detail(detail)
             return {
+                "karaca_role": "status",
                 "countdown": detail.get("stepView", {}).get("countdown"),
                 "freshness": detail.get("freshness"),
                 "fresh_until": fresh_until.isoformat() if fresh_until else None,
@@ -464,6 +465,11 @@ class KaracaModeSensor(KaracaBaseEntity, SensorEntity):
         except Exception:  # pylint: disable=broad-except
             return MODE_STATUS_STANDBY
 
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return mode sensor metadata."""
+        return {"karaca_role": "active_mode"}
+
 
 class KaracaFreshnessSensor(KaracaBaseEntity, SensorEntity):
     """Sensor that shows whether brewed tea is still fresh."""
@@ -503,6 +509,7 @@ class KaracaFreshnessSensor(KaracaBaseEntity, SensorEntity):
                 remaining_minutes = max(0, int(remaining // 60))
 
             return {
+                "karaca_role": "tea_freshness",
                 "fresh_for_minutes": int(TEA_FRESHNESS_DURATION.total_seconds() // 60),
                 "fresh_until": fresh_until.isoformat() if fresh_until else None,
                 "remaining_minutes": remaining_minutes,

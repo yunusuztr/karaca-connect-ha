@@ -1,103 +1,160 @@
-# Karaca Connect - Home Assistant Custom Integration
+# Karaca Connect for Home Assistant
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
-![Home Assistant](https://img.shields.io/badge/home--assistant-%230123.svg?style=for-the-badge&logo=home-assistant&logoColor=white)
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Integration-41BDF5.svg?style=for-the-badge&logo=home-assistant&logoColor=white)](https://www.home-assistant.io/)
+[![Release](https://img.shields.io/github/v/release/yunusuztr/karaca-connect-ha?style=for-the-badge)](https://github.com/yunusuztr/karaca-connect-ha/releases)
 
-[TR] Karaca Çaysever Robotea Pro Connect 4in1 akıllı çay makinesi için Home Assistant entegrasyonu.
+Karaca Çaysever Robotea Pro Connect 4in1 cihazlarını Home Assistant'a bağlayan, cihaz durumlarını ve ayarlarını sunan resmi olmayan topluluk entegrasyonu.
 
-[EN] Home Assistant custom integration for the Karaca Çaysever Robotea Pro Connect 4in1 smart tea maker.
+Unofficial community integration for connecting Karaca Çaysever Robotea Pro Connect 4in1 devices to Home Assistant.
 
-> [TR] Bu proje resmi olmayan, topluluk tarafından geliştirilen bir Home Assistant özel entegrasyonudur. Karaca ile bağlantılı değildir; Karaca tarafından geliştirilmemiş, desteklenmemiş veya onaylanmamıştır.
+**Gereksinim / Requirement:** Home Assistant `2024.8.0` veya üzeri.
+
+> Bu proje Karaca ile bağlantılı değildir; Karaca tarafından geliştirilmemiş, desteklenmemiş veya onaylanmamıştır.
 >
-> [EN] This is an unofficial, community-developed Home Assistant custom integration. It is not affiliated with, endorsed by, supported by, or maintained by Karaca.
+> This project is not affiliated with, endorsed by, supported by, or maintained by Karaca.
 
----
+## Karaca Connect Card
 
-## Türkçe
+Sürüm `1.0.7` ile entegrasyona cihaz için özel olarak tasarlanmış bir Lovelace kartı eklendi. Kart, seçilen Karaca cihazının entity'lerini otomatik keşfeder.
 
-Bu entegrasyon Karaca Connect bulut API'sini kullanarak çay makinenizin durumunu Home Assistant'a aktarır ve cihaz modlarını kontrol etmenizi sağlar.
+<table>
+  <tr>
+    <td><img src="docs/images/karaca-card-tea-brewing.png" alt="Çay demleniyor" width="360"></td>
+    <td><img src="docs/images/karaca-card-tea-fresh.png" alt="Çay hazır ve taze" width="360"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Çay demleniyor</strong></td>
+    <td align="center"><strong>Çay hazır ve taze</strong></td>
+  </tr>
+</table>
 
-Bu proje resmi değildir. Karaca Connect bulut API'si değişirse entegrasyonun çalışması etkilenebilir. Kullanım sorumluluğu kullanıcıya aittir.
+<table>
+  <tr>
+    <td><img src="docs/images/karaca-card-water-ready.png" alt="Su hazır" width="360"></td>
+    <td><img src="docs/images/karaca-card-settings.png" alt="Bildirim ayarları" width="360"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Su hazır</strong></td>
+    <td align="center"><strong>Bildirim ayarları</strong></td>
+  </tr>
+</table>
 
-### Özellikler
+### Kart Özellikleri
 
-- **Kurulum akışı:** Home Assistant arayüzünden e-posta ve şifre ile kurulum.
-- **Cihaz seçimi:** Hesabınızda birden fazla desteklenen Karaca cihaz varsa kurulumda cihaz seçimi.
-- **Mod kontrolü:** Su kaynatma, çay demleme, filtre kahve ve mama suyu için ayrı switch entityleri.
-- **Aktif mod sensörü:** Cihaz bağlı ve beklemedeyse `Beklemede`, bağlı değilse `Kapalı` gösterir.
-- **Durum sensörü:** `Su Kaynatılıyor`, `Su Hazır`, `Çay Demleniyor`, `Çay Hazır (Taze)`, `Çay Hazır (Bayat)`, `Kapalı` ve hata durumlarını enum sensör olarak sunar.
-- **Tazelik takibi:** Çay demlendikten sonra API tazelik/countdown verisi veya 60 dakikalık tazelik süresi ile `Taze/Bayat` ayrımı yapılır.
-- **Tazelik sensörü:** Çayın taze, bayat veya kapalı olduğunu ayrı enum sensör olarak gösterir.
-- **Hata eşleme:** Su yok, hedef sıcaklık uygun değil, temizlik gerekli ve genel cihaz uyarıları sabit enum durumları olarak gösterilir.
-- **Cihaz ayar switchleri:** Çay bildirimi, filtre kahve bildirimi, tazelik bildirimi, kapanma bildirimi, su kalmadı bildirimi, anımsatıcılar, konuşma sesi ve temizlik bildirimi kontrol edilebilir.
-- **Ayarlar:** Entegrasyon ayarlarından ad ön eki, güncelleme aralığı ve hata mesajının ekranda kalma süresi değiştirilebilir.
-- **Hızlı takip yenilemesi:** Komut gönderildikten sonra cihaz durumu kısa aralıklarla yeniden kontrol edilir.
-- **Kimlik doğrulama:** Token yenileme ve yeniden kimlik doğrulama akışı desteklenir.
-- **Dil desteği:** Türkçe ve İngilizce çeviriler bulunur.
-- **Diagnostics:** Sorun bildirimi için Home Assistant diagnostics desteği vardır.
+- Mama suyu, filtre kahve, su kaynatma ve çay demleme kontrolleri.
+- Yanlış dokunmaları önlemek için basılı tutma veya kart içi onay seçeneği.
+- Çalışan mod için akıcı halka animasyonu.
+- Su ve mama suyu hazır olduğunda tam dolu, yumuşak parlayan halka.
+- Çay için 15 dakikalık demleme ve 60 dakikalık tazelik göstergesi.
+- Filtre kahve için 2 dakikalık demleme ve 40 dakikalık tazelik göstergesi.
+- Hedef sıcaklık bilgileri: mama suyu `40°C`, çay `90°C`, filtre kahve `90°C`, su kaynatma `100°C`.
+- Taze ve bayat durumları için renkli durum göstergeleri.
+- Cihaz bildirimleri, anımsatıcılar, konuşma sesi ve temizlik ayarları için kart içi panel.
+- Bağlantı, hata ve komut zaman aşımı durumları için görünür uyarılar.
+- Mobil ve masaüstü ekranlara uyumlu responsive tasarım.
 
-### Kurulum
+Karttaki yerel sayaçlar görsel yardımcıdır. Karaca API'den gelen cihaz durumu her zaman önceliklidir.
+
+## Entegrasyon Özellikleri
+
+- Home Assistant arayüzünden e-posta ve şifre ile kurulum.
+- Hesapta birden fazla desteklenen cihaz varsa cihaz seçimi.
+- Su kaynatma, çay demleme, filtre kahve ve mama suyu için ayrı mod switch'leri.
+- Aktif mod, cihaz durumu ve çay tazeliği sensörleri.
+- Otomasyon editöründe seçilebilir sabit enum durumları.
+- Su yok, hedef sıcaklık uygun değil, temizlik gerekli ve genel cihaz hatalarının eşlenmesi.
+- Çay, filtre kahve, tazelik, kapanma, su kalmadı, anımsatıcı, konuşma sesi ve temizlik ayarları.
+- Ayarlanabilir güncelleme aralığı ve hata gösterim süresi.
+- Komut sonrasında hızlı durum yenilemesi.
+- Token yenileme ve yeniden kimlik doğrulama.
+- Türkçe ve İngilizce dil desteği.
+- Home Assistant diagnostics desteği.
+
+## Kurulum
+
+### HACS
 
 1. HACS arayüzünde sağ üst menüden **Custom repositories** bölümünü açın.
-2. `https://github.com/yunusuztr/karaca-connect-ha` adresini ekleyin ve kategori olarak **Integration** seçin.
-3. Entegrasyonu indirin ve Home Assistant'ı yeniden başlatın.
-4. **Ayarlar > Cihazlar ve hizmetler > Entegrasyon ekle** bölümünden **Karaca Connect** aratın.
-5. Karaca Connect hesabınızla giriş yapın ve kurulumu tamamlayın.
+2. `https://github.com/yunusuztr/karaca-connect-ha` adresini ekleyin.
+3. Kategori olarak **Integration** seçin.
+4. **Karaca Connect** entegrasyonunu indirin.
+5. Home Assistant'ı yeniden başlatın.
+6. **Ayarlar > Cihazlar ve Hizmetler > Entegrasyon Ekle** bölümünden **Karaca Connect** aratın.
+7. Karaca Connect hesabınızla giriş yapıp cihazınızı seçin.
 
-### Örnek Otomasyon
+## Kart Kurulumu
+
+Entegrasyon kart dosyasını Home Assistant üzerinden sunar. Lovelace kaynağını bir kez eklemek gerekir:
+
+1. **Ayarlar > Panolar** bölümünü açın.
+2. Sağ üst menüden **Kaynaklar** bölümüne girin.
+3. Yeni JavaScript modülü ekleyin:
+
+```text
+/karaca-connect-card.js?v=1.0.7
+```
+
+4. Kaynak türünü **JavaScript Module** seçin.
+5. Dashboard'u yenileyin.
+6. Kart ekleme ekranından **Karaca Connect Card** seçin.
+7. Görsel editörden Karaca cihazınızı ve onay yöntemini seçin.
+
+### YAML Kullanımı
+
+```yaml
+type: custom:karaca-connect-card
+device_id: KARACA_DEVICE_ID
+name: Karaca Çaysever
+confirm_type: hold
+show_freshness: true
+animation: true
+```
+
+`device_id` değerini elle yazmak yerine kartın görsel editöründen cihaz seçmeniz önerilir.
+
+## Örnek Otomasyon
 
 ```yaml
 alias: "Karaca: Su Hazır Bildirimi"
-trigger:
-  - platform: state
+triggers:
+  - trigger: state
     entity_id: sensor.cay_makinesi_durumu
     from: "Su Kaynatılıyor"
     to: "Su Hazır"
-action:
-  - service: notify.notify
+actions:
+  - action: notify.notify
     data:
       title: "Karaca Çaysever"
       message: "Su hazır. Çayı demleyebilirsiniz."
+mode: single
 ```
 
----
+Entity kimliği, kurulum sırasında seçtiğiniz ad ön ekine göre değişebilir.
 
 ## English
 
-This integration connects to the Karaca Connect cloud API and exposes your smart tea maker in Home Assistant.
+Karaca Connect exposes supported tea-maker modes, device status, freshness, notification settings, authentication recovery, and diagnostics in Home Assistant.
 
-This project is unofficial. If the Karaca Connect cloud API changes, the integration may stop working or require updates. Use it at your own risk.
-
-### Features
-
-- **Config flow:** Set up from the Home Assistant UI with email and password.
-- **Device selection:** Choose a supported Karaca device when multiple devices exist on the account.
-- **Mode control:** Separate switch entities for boiling water, tea brewing, filter coffee, and baby water.
-- **Active mode sensor:** Shows `Beklemede` when the device is connected and idle, and `Kapalı` when it is disconnected.
-- **Status sensor:** Exposes stable enum states such as `Su Kaynatılıyor`, `Su Hazır`, `Çay Demleniyor`, `Çay Hazır (Taze)`, `Çay Hazır (Bayat)`, `Kapalı`, and mapped error states.
-- **Freshness handling:** Brewed tea is marked fresh/stale from API freshness/countdown data or the 60-minute freshness window.
-- **Freshness sensor:** Exposes tea freshness as a separate enum sensor.
-- **Error mapping:** Water empty, invalid target temperature, cleaning required, and generic device warnings are exposed as stable enum states.
-- **Device setting switches:** Tea, filter coffee, freshness, power-off, no-water, reminder, voice, and cleaning notification settings can be controlled.
-- **Options flow:** Configure name prefix, polling interval, and how long command errors remain visible.
-- **Fast follow-up refresh:** Device state is refreshed shortly after cloud commands.
-- **Authentication:** Refresh-token handling and reauthentication support.
-- **Translations:** Turkish and English UI translations.
-- **Diagnostics:** Home Assistant diagnostics support for issue reports.
+Version `1.0.7` also bundles a dedicated responsive Lovelace card. The card discovers entities from the selected Karaca device, provides guarded mode controls, displays brewing/freshness timers, and includes a settings panel.
 
 ### Installation
 
-1. Open **HACS**, then **Custom repositories**.
-2. Add `https://github.com/yunusuztr/karaca-connect-ha` and select **Integration**.
-3. Download the integration and restart Home Assistant.
-4. Go to **Settings > Devices & Services > Add Integration** and search for **Karaca Connect**.
-5. Sign in with your Karaca Connect account and finish setup.
+1. Add `https://github.com/yunusuztr/karaca-connect-ha` to HACS as an **Integration** custom repository.
+2. Install **Karaca Connect** and restart Home Assistant.
+3. Add the integration from **Settings > Devices & Services**.
+4. Add `/karaca-connect-card.js?v=1.0.7` as a **JavaScript Module** dashboard resource.
+5. Add **Karaca Connect Card** to a dashboard and select your device in the visual editor.
 
----
+## Version 1.0.7
 
-## License & Disclaimer
+- Added the dedicated Karaca Connect Lovelace card.
+- Added device-based automatic entity discovery metadata.
+- Added tea and coffee brewing/freshness presentations.
+- Added water and baby-water ready animations.
+- Added target-temperature badges and device settings panel.
+- Added responsive visual editor and guarded mode controls.
 
-This is an unofficial, community-driven custom integration and is not affiliated with Karaca. It is not developed, supported, endorsed, or maintained by Karaca.
+## License and Disclaimer
 
-Product names, logos, and brands belong to their respective owners. Use this integration at your own risk.
+This is an unofficial, community-driven custom integration. Product names, logos, and brands belong to their respective owners. Karaca Connect cloud API changes may affect functionality. Use this integration at your own risk.

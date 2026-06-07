@@ -1,8 +1,12 @@
 """The Karaca Connect integration."""
 import asyncio
 from datetime import timedelta
+from pathlib import Path
 import time
+
 import aiohttp
+
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, Platform
 from homeassistant.core import HomeAssistant
@@ -28,8 +32,12 @@ from .const import (
 class KaracaAPIError(Exception):
     """Exception raised when Karaca API returns a business validation error."""
 
+
 PLATFORMS = [Platform.SENSOR, Platform.SWITCH]
 _INTERNAL_UPDATE_SKIP = "_internal_update_skip"
+_CARD_STATIC_PATH_REGISTERED = "_card_static_path_registered"
+_CARD_URL = "/karaca-connect-card.js"
+_CARD_PATH = Path(__file__).parent / "www" / "karaca-connect-card.js"
 
 
 def _mark_entry_internal_update(hass: HomeAssistant, entry_id: str) -> None:
@@ -57,9 +65,16 @@ def _clear_entry_internal_update(hass: HomeAssistant, entry_id: str) -> None:
     skips = hass.data.get(DOMAIN, {}).get(_INTERNAL_UPDATE_SKIP, {})
     skips.pop(entry_id, None)
 
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Karaca Connect from a config entry."""
     hass.data.setdefault(DOMAIN, {})
+
+    if not hass.data[DOMAIN].get(_CARD_STATIC_PATH_REGISTERED):
+        await hass.http.async_register_static_paths(
+            [StaticPathConfig(_CARD_URL, str(_CARD_PATH), False)]
+        )
+        hass.data[DOMAIN][_CARD_STATIC_PATH_REGISTERED] = True
 
     # Create the API Client
     client = KaracaAPIClient(
@@ -92,6 +107,7 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         return
 
     await hass.config_entries.async_reload(entry.entry_id)
+
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
