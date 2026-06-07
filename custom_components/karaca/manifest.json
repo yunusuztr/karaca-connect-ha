@@ -3,6 +3,7 @@
   "name": "Karaca Connect",
   "codeowners": ["@yunusuztr"],
   "config_flow": true,
+  "dependencies": ["http"],
   "documentation": "https://github.com/yunusuztr/karaca-connect-ha",
   "integration_type": "hub",
   "iot_class": "cloud_polling",
